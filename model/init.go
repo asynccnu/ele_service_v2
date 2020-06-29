@@ -19,7 +19,7 @@ var DB *Database
 // used for cli
 func InitSelfDB() *mongo.Client {
 	// Set client options
-	clientOptions := options.Client().ApplyURI(viper.GetString("db.uri"))
+	clientOptions := options.Client().ApplyURI(viper.GetString("db.url"))
 
 	// Connect to MongoDB
 	client, err := mongo.Connect(context.TODO(), clientOptions)
