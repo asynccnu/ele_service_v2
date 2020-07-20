@@ -2,12 +2,12 @@ package service
 
 import (
 	"encoding/xml"
+	"errors"
 	"github.com/asynccnu/ele_service_v2/log"
 	"github.com/asynccnu/ele_service_v2/model"
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -27,20 +27,36 @@ type ArchiList struct {
 	Architectures []Architecture `xml:"architectureInfoList>architectureInfo"`
 }
 
-//楼栋信息
+// 楼栋信息
 type Architecture struct {
 	ArchitectureID   string `xml:"ArchitectureID"`
 	ArchitectureName string `xml:"ArchitectureName"`
-
-	//	TopFloor string		`xml:"ArchitectureStorys"` // 最高层数,以后可能会用到
-	//	BeginFloor	string	`xml:"ArchitectureBegin"`  // 最低的层数
+	TopFloor         string `xml:"ArchitectureStorys"` // 最高层数,以后可能会用到
+	BeginFloor       string `xml:"ArchitectureBegin"`  // 最低的层数
 }
 
 // 获取每个区域楼层信息
-func GetArchitectures(AreaId string) (ArchiList, error) {
+func GetArchitectures(Area string) (ArchiList, error) {
+	var areaId string
+	switch Area {
+	case "西区学生宿舍":
+		areaId = "0001"
+	case "东区学生宿舍":
+		areaId = "0002"
+	case "元宝山学生宿舍":
+		areaId = "0003"
+	case "南湖学生宿舍":
+		areaId = "0004"
+	case "国际园区":
+		areaId = "0006"
+	}
+	if areaId == "" {
+		return ArchiList{}, errors.New("wrong query parameter")
+	}
+
 	var result ArchiList
 	url := "http://jnb.ccnu.edu.cn/icbs/PurchaseWebService.asmx/" +
-		"getArchitectureInfo?Area_ID=" + AreaId
+		"getArchitectureInfo?Area_ID=" + areaId
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -103,64 +119,6 @@ func GetMeterInfo(RoomId string) (model.MeterInfo, error) {
 		return model.MeterInfo{}, err
 	}
 	return result, nil
-}
-
-//获取电表数据
-func GetMeterInfoAPI(Area, Architecture, Floor, DormName string) (model.MeterInfo, error) {
-	var (
-		areaId, architectureId string
-		dormInfo               DormInfo
-		meterInfo              model.MeterInfo
-	)
-	// 获取区域ID
-	switch Area {
-	case "西区学生宿舍":
-		areaId = "0001"
-	case "东区学生宿舍":
-		areaId = "0002"
-	case "元宝山学生宿舍":
-		areaId = "0003"
-	case "南湖学生宿舍":
-		areaId = "0004"
-	case "国际园区":
-		areaId = "0006"
-	}
-
-	// 获取楼栋ID
-	archiList, err := GetArchitectures(areaId)
-	if err != nil {
-		return model.MeterInfo{}, err
-	}
-
-	for _, v := range archiList.Architectures {
-		if v.ArchitectureName == Architecture {
-			architectureId = v.ArchitectureID
-			break
-		}
-	}
-
-	// 获取宿舍ID
-	dormList, err := GetRoomId(architectureId, strings.TrimSuffix(Floor, "楼"))
-	if err != nil {
-		return model.MeterInfo{}, err
-	}
-
-	for _, v := range dormList.Dorms {
-		if v.DormName == DormName {
-			dormInfo.DormId = v.DormId
-			dormInfo.DormName = DormName
-			break
-		}
-	}
-
-	// 获取电表ID
-	meterInfo, err = GetMeterInfo(dormInfo.DormId)
-	if err != nil {
-		return model.MeterInfo{}, err
-	}
-
-	meterInfo.DormName = dormInfo.DormName
-	return meterInfo, nil
 }
 
 // 有两个请求 第一个请求获取电费和时间，第二个请求获取昨日用量

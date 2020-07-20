@@ -27,9 +27,11 @@ func Load(g *gin.Engine, mw ...gin.HandlerFunc) *gin.Engine {
 	// g.POST("/login", user.Login)
 
 	e := g.Group("/api/ele/v1")
-	e.Use(middleware.AuthMiddleware())
+	//	e.Use(middleware.AuthMiddleware())
 	{
-		e.GET("", ele.Get)
+		e.GET("/architectures", ele.GetArchitectures)
+		e.GET("/dormitories", ele.GetDormitories)
+		e.GET("/electricity", ele.Get)
 	}
 
 	// The health check handlers
