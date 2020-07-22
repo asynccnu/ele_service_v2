@@ -24,30 +24,31 @@ type DormInfo struct {
 
 // 楼栋信息
 type ArchiList struct {
-	Architectures []Architecture `xml:"architectureInfoList>architectureInfo"`
+	Architectures []Architecture `xml:"architectureInfoList>architectureInfo" json:"architectures"`
 }
 
 // 楼栋信息
 type Architecture struct {
-	ArchitectureID   string `xml:"ArchitectureID"`
-	ArchitectureName string `xml:"ArchitectureName"`
-	TopFloor         string `xml:"ArchitectureStorys"` // 最高层数,以后可能会用到
-	BeginFloor       string `xml:"ArchitectureBegin"`  // 最低的层数
+	ArchitectureID   string `xml:"ArchitectureID" json:"architecture_id"`
+	ArchitectureName string `xml:"ArchitectureName" json:"architecture_name"`
+	TopFloor         string `xml:"ArchitectureStorys" json:"top_floor"`  // 最高层数,以后可能会用到
+	BeginFloor       string `xml:"ArchitectureBegin" json:"begin_floor"` // 最低的层数
 }
 
 // 获取每个区域楼层信息
+// 西区学生宿舍,东区学生宿舍,元宝山学生宿舍,南湖学生宿舍,国际园区 分别是1 2 3 4 5.
 func GetArchitectures(Area string) (ArchiList, error) {
 	var areaId string
 	switch Area {
-	case "西区学生宿舍":
+	case "1":
 		areaId = "0001"
-	case "东区学生宿舍":
+	case "2":
 		areaId = "0002"
-	case "元宝山学生宿舍":
+	case "3":
 		areaId = "0003"
-	case "南湖学生宿舍":
+	case "4":
 		areaId = "0004"
-	case "国际园区":
+	case "5":
 		areaId = "0006"
 	}
 	if areaId == "" {
@@ -121,9 +122,56 @@ func GetMeterInfo(RoomId string) (model.MeterInfo, error) {
 	return result, nil
 }
 
+//  获取电表数据
+func GetMeterInfoAPI(Area, Architecture, Floor, DormName string) (model.MeterInfo, error) {
+	var (
+		architectureId string
+		dormInfo       DormInfo
+		meterInfo      model.MeterInfo
+	)
+
+	// 获取楼栋ID
+	archiList, err := GetArchitectures(Area)
+	if err != nil {
+		return model.MeterInfo{}, err
+	}
+
+	for _, v := range archiList.Architectures {
+		if v.ArchitectureName == Architecture {
+			architectureId = v.ArchitectureID
+			break
+		}
+	}
+
+	// 获取宿舍ID
+	dormList, err := GetRoomId(architectureId, Floor)
+	if err != nil {
+		return model.MeterInfo{}, err
+	}
+
+	for _, v := range dormList.Dorms {
+		if v.DormName == DormName {
+			dormInfo.DormId = v.DormId
+			dormInfo.DormName = DormName
+			break
+		}
+	}
+
+	// 获取电表ID
+	meterInfo, err = GetMeterInfo(dormInfo.DormId)
+	if err != nil {
+		return model.MeterInfo{}, err
+	}
+
+	meterInfo.DormName = dormInfo.DormName
+
+	return meterInfo, nil
+}
+
 // 有两个请求 第一个请求获取电费和时间，第二个请求获取昨日用量
-func GetElectricCharge(RoomId string) (model.ElectricCharge, error) {
+func GetElectricCharge(RoomId string, meterType string) (model.ElectricCharge, error) {
 	var charge model.ElectricCharge
+	charge.Type = meterType
 	charge.Id = RoomId
 	// 第二个URL的 query要求以“2020/5/30”格式输入昨天的日期
 	// firstUrl 是第一个请求的URL,secondUrl 是第二个
@@ -169,7 +217,7 @@ func GetElectricCharge(RoomId string) (model.ElectricCharge, error) {
 		return cache, nil
 	}
 
-	//        构造第二个请求
+	// 构造第二个请求
 	res, err := http.Get(secondUrl)
 	if err != nil {
 		cache, err := model.GetElectricity(RoomId)
@@ -198,7 +246,7 @@ func GetElectricCharge(RoomId string) (model.ElectricCharge, error) {
 	}
 
 	if err = model.AddElectricity(charge); err != nil {
-		log.Error("AddElectricity function error")
+		log.Error("AddElectricity function error" + err.Error())
 	}
 
 	return charge, nil

@@ -14,17 +14,18 @@ const (
 
 // 电费储存结构
 type ElectricCharge struct {
-	Id           string           `bson:"meter_id"`                 // 电表ID
-	RemainPower  string           `xml:"remainPower"  bson:"power"` // 剩余电量 单位：度
-	ReadTime     string           `xml:"readTime"  bson:"time"`     // 最近一次抄表时间
-	ElectricInfo ElectricInfoList `xml:"dayValueInfoList>DayValueInfo"`
+	Id           string           `bson:"meter_id" json:"id"`                           // 电表ID
+	Type         string           `bson:"type" json:"type"`                             // 电费的类型
+	RemainPower  string           `xml:"remainPower"  bson:"power" json:"remain_power"` // 剩余电量 单位：度
+	ReadTime     string           `xml:"readTime"  bson:"time" json:"read_time"`        // 最近一次抄表时间
+	ElectricInfo ElectricInfoList `xml:"dayValueInfoList>DayValueInfo" json:"electric_info"`
 }
 
-//用List是因为这个接口返回一段时间内的数据,但是我把日期限制在昨天,就只返回昨天的数据
+// 用List是因为这个接口返回一段时间内的数据,但是我把日期限制在昨天,就只返回昨天的数据
 // 电费储存结构
 type ElectricInfoList struct {
-	YesterdayElecUse string `xml:"dayValue" bson:"value"`     // 昨日用电量
-	YesterdayFee     string `xml:"dayUseMeony"  bson:"money"` // 昨日电费
+	YesterdayElecUse string `xml:"dayValue" bson:"value" json:"yesterday_ele_use"` // 昨日用电量
+	YesterdayFee     string `xml:"dayUseMeony"  bson:"money" json:"yesterday_fee"` // 昨日电费
 }
 
 // 电表号储存结构
@@ -33,7 +34,7 @@ type MeterInfo struct {
 	MeterId  string `bson:"meter_id" xml:"meterList>MeterInfo>meterId"`
 }
 
-//获取mongodb中的寝室电表信息,如果没有则返回错误
+// 获取mongodb中的寝室电表信息,如果没有则返回错误
 func GetMongoMeterInfo(DormName string) (MeterInfo, error) {
 	collection := DB.Self.Database(MongoDb).Collection(MeterCol)
 	var result MeterInfo
@@ -73,6 +74,9 @@ func AddMeterInfo(meter MeterInfo) error {
 		if err != nil {
 			return err
 		}
+		if meter.MeterId == "" {
+			return errors.New("empty meterInfo")
+		}
 		_, err = collection.InsertOne(context.TODO(), meter)
 	}
 
@@ -96,6 +100,9 @@ func HaveElectricity(id string) (bool, error) {
 func AddElectricity(rec ElectricCharge) error {
 	collection := DB.Self.Database(MongoDb).Collection(ElecCol)
 	var err error
+	if rec.Id == "" {
+		return errors.New(" empty ElectricCharge")
+	}
 
 	// 有记录则为替换，无记录就插入
 	if haveDoc, _ := HaveElectricity(rec.Id); haveDoc {
