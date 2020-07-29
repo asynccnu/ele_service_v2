@@ -6,66 +6,24 @@ import (
 	"github.com/asynccnu/ele_service_v2/model"
 	"github.com/asynccnu/ele_service_v2/service"
 	"github.com/gin-gonic/gin"
-	"strings"
 )
-
-// 获取楼栋信息
-func GetArchitectures(c *gin.Context) {
-	area := c.Query("area")
-
-	architectures, err := service.GetArchitectures(area)
-	if err != nil {
-		log.Error("GetArchitectures function error")
-		handler.SendError(c, err, nil, err.Error())
-		return
-	}
-	handler.SendResponse(c, nil, architectures)
-
-}
-
-// 获取房间信息
-func GetDormitories(c *gin.Context) {
-	architecture := c.Query("architecture_id")
-	floor := c.Query("floor")
-
-	dormitories, err := service.GetRoomId(architecture, floor)
-	if err != nil {
-		log.Error("GetRoomId function error")
-		handler.SendError(c, err, nil, err.Error())
-		return
-	}
-
-	// 传给前端的宿舍名去掉空调照明后缀,还要去重
-	var trimDorms []string
-	store := make(map[string]bool)
-
-	for i := 0; i < len(dormitories.Dorms); i++ {
-		s := strings.Trim(dormitories.Dorms[i].DormName, "空调照明")
-		if _, exist := store[s]; !exist {
-			trimDorms = append(trimDorms, s)
-		}
-		store[s] = true
-	}
-
-	handler.SendResponse(c, nil, trimDorms)
-}
 
 // 获取电表信息
 func Get(c *gin.Context) {
-	// 获取电表信息
+	// 获取电表信息 缺少参数和参数错误的情况在下面判断
 	area := c.Query("area")
 	architecture := c.Query("architecture")
 	floor := c.Query("floor")
 	dormitory := c.Query("dormitory")
-	meterType := c.Query("type")
+	meterType := c.DefaultQuery("type", "all")
 
-	var meterInfoList []model.MeterInfo
-	var dormitories []string
-	var chargeList []model.ElectricCharge
-	var meterInfo model.MeterInfo
-	var err error
-	empty := model.MeterInfo{}
-
+	var (
+		meterInfoList []*model.MeterInfo
+		dormitories   []string
+		chargeList    []model.ElectricCharge
+		meterInfo     *model.MeterInfo
+		err           error
+	)
 	switch meterType {
 	case "air":
 		dormitory += "空调"
@@ -77,36 +35,37 @@ func Get(c *gin.Context) {
 
 	// 有的国交南湖宿舍是不分空调和照明的,就都放进去请求
 	if meterType == "all" {
-		dormitories = append(dormitories, dormitory+"空调")
-		dormitories = append(dormitories, dormitory+"照明")
+		dormitories = append(dormitories, dormitory+"空调", dormitory+"照明")
 	}
 	dormitories = append(dormitories, dormitory)
 
 	// 获取电表信息
-	for i := 0; i < len(dormitories); i++ {
-		if meterInfo, err = model.GetMongoMeterInfo(dormitories[i]); err != nil || meterInfo == empty {
+	for _, v := range dormitories {
+		if meterInfo, err = model.GetMongoMeterInfo(v); err != nil || *meterInfo == (model.MeterInfo{}) {
 			// 参数错的话不会报错 比如原来是不用加空调照明后缀的,我全部加了也不会报错
-			if meterInfo, err = service.GetMeterInfoAPI(area, architecture, floor, dormitories[i]); err != nil {
-				log.Error("GetMongoMeterInfo function error" + err.Error())
+			if meterInfo, err = service.GetMeterInfoAPI(area, architecture, floor, v); err != nil {
+				log.Error("GetMeterInfoAPI function error" + err.Error())
 				handler.SendError(c, err, nil, err.Error())
 				return
 			}
 
 			// 如果能获取到电表信息,就把电表信息添加到数据库中
-			if meterInfo != empty {
+			if *meterInfo != (model.MeterInfo{}) {
 				if err = model.AddMeterInfo(meterInfo); err != nil {
-					log.Error(" AddMeterInfo function error" + err.Error())
+					log.Error(" AddMeterInfo function error " + err.Error())
 				}
 			}
 		}
-		if meterInfo != empty {
+		if *meterInfo != (model.MeterInfo{}) {
 			meterInfoList = append(meterInfoList, meterInfo)
 		}
 	}
 
+	// 参数错误和缺少参数归在一类
 	if len(meterInfoList) == 0 {
 		log.Error("Can't get right meterInfo")
-		handler.SendError(c, nil, nil, "may be wrong request parameters")
+		handler.SendError(c, nil, nil, "may be wrong request parameters or missing parameters")
+		return
 	}
 
 	// 获取电费信息
@@ -125,7 +84,8 @@ func Get(c *gin.Context) {
 			handler.SendError(c, err, nil, err.Error())
 			return
 		}
-		chargeList = append(chargeList, charge)
+
+		chargeList = append(chargeList, *charge)
 	}
 
 	handler.SendResponse(c, nil, chargeList)

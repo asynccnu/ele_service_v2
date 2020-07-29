@@ -2,12 +2,10 @@ package service
 
 import (
 	"encoding/xml"
-	"errors"
 	"github.com/asynccnu/ele_service_v2/log"
 	"github.com/asynccnu/ele_service_v2/model"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -31,15 +29,15 @@ type ArchiList struct {
 type Architecture struct {
 	ArchitectureID   string `xml:"ArchitectureID" json:"architecture_id"`
 	ArchitectureName string `xml:"ArchitectureName" json:"architecture_name"`
-	TopFloor         string `xml:"ArchitectureStorys" json:"top_floor"`  // 最高层数,以后可能会用到
-	BeginFloor       string `xml:"ArchitectureBegin" json:"begin_floor"` // 最低的层数
+	TopFloor         string `xml:"ArchitectureStorys" json:"top_floor"` // 最高层数,以后可能会用到
+	LowFloor         string `xml:"ArchitectureBegin" json:"low_floor"`  // 最低的层数
 }
 
 // 获取每个区域楼层信息
 // 西区学生宿舍,东区学生宿舍,元宝山学生宿舍,南湖学生宿舍,国际园区 分别是1 2 3 4 5.
-func GetArchitectures(Area string) (ArchiList, error) {
+func GetArchitectures(area string) (*ArchiList, error) {
 	var areaId string
-	switch Area {
+	switch area {
 	case "1":
 		areaId = "0001"
 	case "2":
@@ -51,108 +49,75 @@ func GetArchitectures(Area string) (ArchiList, error) {
 	case "5":
 		areaId = "0006"
 	}
-	if areaId == "" {
-		return ArchiList{}, errors.New("wrong query parameter")
-	}
 
 	var result ArchiList
 	url := "http://jnb.ccnu.edu.cn/icbs/PurchaseWebService.asmx/" +
 		"getArchitectureInfo?Area_ID=" + areaId
 
-	resp, err := http.Get(url)
+	err := getData(url, &result)
 	if err != nil {
-		return ArchiList{}, err
+		return nil, err
 	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return ArchiList{}, err
-	}
-
-	err = xml.Unmarshal(body, &result)
-	if err != nil {
-		return ArchiList{}, err
-	}
-	return result, nil
+	return &result, nil
 }
 
 // 获取寝室信息
-func GetRoomId(ArchitectureId string, FloorId string) (DormList, error) {
+func GetRoomId(architectureId string, floorId string) (*DormList, error) {
 	var result DormList
 	url := "http://jnb.ccnu.edu.cn/icbs/PurchaseWebService.asmx/" +
-		"getRoomInfo?Architecture_ID=" + ArchitectureId + "&Floor=" + FloorId
-	resp, err := http.Get(url)
-	if err != nil {
-		return DormList{}, err
-	}
-	defer resp.Body.Close()
+		"getRoomInfo?Architecture_ID=" + architectureId + "&Floor=" + floorId
 
-	body, err := ioutil.ReadAll(resp.Body)
+	err := getData(url, &result)
 	if err != nil {
-		return DormList{}, err
+		return nil, err
 	}
-
-	err = xml.Unmarshal(body, &result)
-	if err != nil {
-		return DormList{}, err
-	}
-	return result, nil
+	return &result, nil
 }
 
-func GetMeterInfo(RoomId string) (model.MeterInfo, error) {
+func GetMeterInfo(roomId string) (*model.MeterInfo, error) {
 	var result model.MeterInfo
 	url := "http://jnb.ccnu.edu.cn/icbs/PurchaseWebService.asmx/" +
-		"getMeterInfo?Room_ID=" + RoomId
-	resp, err := http.Get(url)
-	if err != nil {
-		return model.MeterInfo{}, err
-	}
-	defer resp.Body.Close()
+		"getMeterInfo?Room_ID=" + roomId
 
-	body, err := ioutil.ReadAll(resp.Body)
+	err := getData(url, &result)
 	if err != nil {
-		return model.MeterInfo{}, err
+		return nil, err
 	}
 
-	err = xml.Unmarshal(body, &result)
-	if err != nil {
-		return model.MeterInfo{}, err
-	}
-	return result, nil
+	return &result, nil
 }
 
 //  获取电表数据
-func GetMeterInfoAPI(Area, Architecture, Floor, DormName string) (model.MeterInfo, error) {
+func GetMeterInfoAPI(area, architecture, floor, dormName string) (*model.MeterInfo, error) {
 	var (
 		architectureId string
 		dormInfo       DormInfo
-		meterInfo      model.MeterInfo
+		meterInfo      *model.MeterInfo
 	)
 
 	// 获取楼栋ID
-	archiList, err := GetArchitectures(Area)
+	archiList, err := GetArchitectures(area)
 	if err != nil {
-		return model.MeterInfo{}, err
+		return nil, err
 	}
 
 	for _, v := range archiList.Architectures {
-		if v.ArchitectureName == Architecture {
+		if v.ArchitectureName == architecture {
 			architectureId = v.ArchitectureID
 			break
 		}
 	}
 
 	// 获取宿舍ID
-	dormList, err := GetRoomId(architectureId, Floor)
+	dormList, err := GetRoomId(architectureId, floor)
 	if err != nil {
-		return model.MeterInfo{}, err
+		return nil, err
 	}
 
 	for _, v := range dormList.Dorms {
-		if v.DormName == DormName {
+		if v.DormName == dormName {
 			dormInfo.DormId = v.DormId
-			dormInfo.DormName = DormName
+			dormInfo.DormName = dormName
 			break
 		}
 	}
@@ -160,7 +125,7 @@ func GetMeterInfoAPI(Area, Architecture, Floor, DormName string) (model.MeterInf
 	// 获取电表ID
 	meterInfo, err = GetMeterInfo(dormInfo.DormId)
 	if err != nil {
-		return model.MeterInfo{}, err
+		return nil, err
 	}
 
 	meterInfo.DormName = dormInfo.DormName
@@ -169,85 +134,59 @@ func GetMeterInfoAPI(Area, Architecture, Floor, DormName string) (model.MeterInf
 }
 
 // 有两个请求 第一个请求获取电费和时间，第二个请求获取昨日用量
-func GetElectricCharge(RoomId string, meterType string) (model.ElectricCharge, error) {
+func GetElectricCharge(meterId string, meterType string) (*model.ElectricCharge, error) {
 	var charge model.ElectricCharge
 	charge.Type = meterType
-	charge.Id = RoomId
+	charge.Id = meterId
 	// 第二个URL的 query要求以“2020/5/30”格式输入昨天的日期
 	// firstUrl 是第一个请求的URL,secondUrl 是第二个
 	now := time.Now().AddDate(0, 0, -1)
-	year, month, day := now.Date()
-
-	//	query := now.Format("2020/7/17") 这种写法没得到预期的输入
-	query := strconv.Itoa(year) + "%2F" + strconv.Itoa(int(month)) + "%2F" + strconv.Itoa(day)
+	query := now.Format("2006/01/02")
 
 	firstUrl := "http://jnb.ccnu.edu.cn/icbs/PurchaseWebService.asmx/" +
-		"getReserveHKAM?AmMeter_ID=" + RoomId
+		"getReserveHKAM?AmMeter_ID=" + meterId
 
 	secondUrl := "http://jnb.ccnu.edu.cn/icbs/PurchaseWebService.asmx/" +
-		"getMeterDayValue?AmMeter_ID=" + RoomId + "&startDate=" + query + "&endDate=" + query
+		"getMeterDayValue?AmMeter_ID=" + meterId + "&startDate=" + query + "&endDate=" + query
 
 	// 构造第一个请求
-	resp, err := http.Get(firstUrl)
-	if err != nil {
-		// 请求失败就从数据库中获取数据,下面同理
-		cache, err := model.GetElectricity(RoomId)
+	err1 := getData(firstUrl, &charge)
+
+	// 构造第二个请求
+	err2 := getData(secondUrl, &charge)
+
+	if err1 != nil || err2 != nil {
+		log.Error("getCharge function error")
+		cache, err := model.GetElectricity(meterId)
 		if err != nil {
-			return charge, err
+			return nil, err
 		}
 		return cache, nil
+	}
+
+	if err := model.AddElectricity(charge); err != nil {
+		log.Error("AddElectricity function error" + err.Error())
+	}
+
+	return &charge, nil
+}
+
+// 爬取分析数据
+func getData(url string, data interface{}) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		cache, err := model.GetElectricity(RoomId)
-		if err != nil {
-			return charge, err
-		}
-		return cache, nil
+		return err
 	}
 
-	err = xml.Unmarshal(body, &charge)
+	err = xml.Unmarshal(body, data)
 	if err != nil {
-		cache, err := model.GetElectricity(RoomId)
-		if err != nil {
-			return charge, err
-		}
-		return cache, nil
+		return err
 	}
-
-	// 构造第二个请求
-	res, err := http.Get(secondUrl)
-	if err != nil {
-		cache, err := model.GetElectricity(RoomId)
-		if err != nil {
-			return charge, err
-		}
-		return cache, nil
-	}
-
-	defer res.Body.Close()
-	newBody, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		cache, err := model.GetElectricity(RoomId)
-		if err != nil {
-			return charge, err
-		}
-		return cache, nil
-	}
-	err = xml.Unmarshal(newBody, &charge)
-	if err != nil {
-		cache, err := model.GetElectricity(RoomId)
-		if err != nil {
-			return charge, err
-		}
-		return cache, nil
-	}
-
-	if err = model.AddElectricity(charge); err != nil {
-		log.Error("AddElectricity function error" + err.Error())
-	}
-
-	return charge, nil
+	return nil
 }
