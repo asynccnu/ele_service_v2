@@ -11,7 +11,7 @@ import (
 func GetArchitectures(c *gin.Context) {
 	area := c.Query("area")
 	if area == "" {
-		handler.SendError(c, nil, nil, "missing parameter area")
+		handler.SendBadRequest(c, nil, nil, "missing parameter area")
 		return
 	}
 

@@ -13,7 +13,7 @@ func GetDormitories(c *gin.Context) {
 	architecture := c.Query("architecture_id")
 	floor := c.Query("floor")
 	if architecture == "" || floor == "" {
-		handler.SendError(c, nil, nil, "missing parameters")
+		handler.SendBadRequest(c, nil, nil, "missing parameters")
 		return
 	}
 
@@ -32,8 +32,8 @@ func GetDormitories(c *gin.Context) {
 		s := strings.Trim(dormitories.Dorms[i].DormName, "空调照明")
 		if _, exist := store[s]; !exist {
 			trimDorms = append(trimDorms, s)
+			store[s] = true
 		}
-		store[s] = true
 	}
 
 	handler.SendResponse(c, nil, trimDorms)

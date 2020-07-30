@@ -14,18 +14,18 @@ const (
 
 // 电费储存结构
 type ElectricCharge struct {
-	Id           string                `bson:"meter_id" json:"id"`                           // 电表ID
-	Type         string                `bson:"type" json:"type"`                             // 电费的类型
-	RemainPower  string                `xml:"remainPower"  bson:"power" json:"remain_power"` // 剩余电量 单位：度
-	ReadTime     string                `xml:"readTime"  bson:"time" json:"read_time"`        // 最近一次抄表时间
-	ElectricInfo YesterdayElectricInfo `xml:"dayValueInfoList>DayValueInfo" json:"electric_info"`
+	Id          string          `bson:"meter_id" json:"id"`                           // 电表ID
+	Type        string          `bson:"type" json:"type"`                             // 电费的类型
+	RemainPower string          `xml:"remainPower"  bson:"power" json:"remain_power"` // 剩余电量 单位：度
+	ReadTime    string          `xml:"readTime"  bson:"time" json:"read_time"`        // 最近一次抄表时间
+	Yesterday   DayElectricInfo `xml:"dayValueInfoList>DayValueInfo" json:"electric_info"`
 }
 
 // 用List是因为这个接口返回一段时间内的数据,但是我把日期限制在昨天,就只返回昨天的数据
 // 电费储存结构
-type YesterdayElectricInfo struct {
-	YesterdayElecUse string `xml:"dayValue" bson:"value" json:"yesterday_ele_use"` // 昨日用电量
-	YesterdayFee     string `xml:"dayUseMeony"  bson:"money" json:"yesterday_fee"` // 昨日电费
+type DayElectricInfo struct {
+	DayElecUse string `xml:"dayValue" bson:"value" json:"yesterday_ele_use"` // 昨日用电量
+	DayFee     string `xml:"dayUseMeony"  bson:"money" json:"yesterday_fee"` // 昨日电费
 }
 
 // 电表号储存结构    meter是电表的意思

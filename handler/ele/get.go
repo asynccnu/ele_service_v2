@@ -64,7 +64,7 @@ func Get(c *gin.Context) {
 	// 参数错误和缺少参数归在一类
 	if len(meterInfoList) == 0 {
 		log.Error("Can't get right meterInfo")
-		handler.SendError(c, nil, nil, "may be wrong request parameters or missing parameters")
+		handler.SendBadRequest(c, nil, nil, "may be wrong request parameters or missing parameters")
 		return
 	}
 
