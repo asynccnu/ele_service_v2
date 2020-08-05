@@ -1,19 +1,27 @@
 package ele
 
 import (
+	"strings"
+
 	"github.com/asynccnu/ele_service_v2/handler"
 	"github.com/asynccnu/ele_service_v2/log"
+	"github.com/asynccnu/ele_service_v2/pkg/errno"
 	"github.com/asynccnu/ele_service_v2/service"
+
 	"github.com/gin-gonic/gin"
-	"strings"
 )
+
+type GetDormitoryResponse struct {
+	Count int      `json:"count"`
+	List  []string `json:"list"`
+}
 
 // 获取房间信息
 func GetDormitories(c *gin.Context) {
-	architecture := c.Query("architecture_id")
+	architecture := c.Query("architecture")
 	floor := c.Query("floor")
 	if architecture == "" || floor == "" {
-		handler.SendBadRequest(c, nil, nil, "missing parameters")
+		handler.SendBadRequest(c, errno.ErrQuery, nil, "architecture and floor are required.")
 		return
 	}
 
@@ -36,5 +44,8 @@ func GetDormitories(c *gin.Context) {
 		}
 	}
 
-	handler.SendResponse(c, nil, trimDorms)
+	handler.SendResponse(c, nil, &GetDormitoryResponse{
+		Count: len(trimDorms),
+		List:  trimDorms,
+	})
 }
