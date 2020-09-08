@@ -23,15 +23,11 @@ func Load(g *gin.Engine, mw ...gin.HandlerFunc) *gin.Engine {
 		c.String(http.StatusNotFound, "The incorrect API route.")
 	})
 
-	// api for authentication functionalities
-	// g.POST("/login", user.Login)
-
 	e := g.Group("/api/ele/v2")
-	//	e.Use(middleware.AuthMiddleware())
 	{
 		e.GET("", ele.Get)
-		// e.GET("/architectures", ele.GetArchitectures)
-		// e.GET("/dormitories", ele.GetDormitories)
+		e.GET("/buildings", ele.GetBuildings)
+		e.GET("/dorms", ele.GetDormitories)
 	}
 
 	// The health check handlers

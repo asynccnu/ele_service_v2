@@ -31,7 +31,23 @@ func GetMetersByBuildingAndRoom(building, room string) ([]*MeterInfo, error) {
 	return result.Meters, nil
 }
 
-// 获取宿舍楼中所有宿舍号
-func GetRoomsByBuildingName(building string) {
+// 获取某宿舍楼中所有宿舍号
+func GetRoomsByBuildingName(building string) ([]string, error) {
+	var result []string
 
+	cursor, err := MeterCollection.Find(context.TODO(), bson.M{"building": building})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	var doc MeterModel
+	for cursor.Next(context.TODO()) {
+		if err := cursor.Decode(&doc); err != nil {
+			return nil, err
+		}
+		result = append(result, doc.Room)
+	}
+
+	return result, err
 }
