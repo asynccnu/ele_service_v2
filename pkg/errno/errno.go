@@ -36,10 +36,10 @@ func (err *Err) Error() string {
 	return fmt.Sprintf("Err - code: %d, message: %s, error: %s", err.Code, err.Message, err.Err)
 }
 
-func IsErrUserNotFound(err error) bool {
-	code, _ := DecodeErr(err)
-	return code == ErrUserNotFound.Code
-}
+// func IsErrUserNotFound(err error) bool {
+// 	code, _ := DecodeErr(err)
+// 	return code == ErrUserNotFound.Code
+// }
 
 func DecodeErr(err error) (int, string) {
 	if err == nil {

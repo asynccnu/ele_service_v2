@@ -4,9 +4,8 @@ import (
 	"net/http"
 
 	"github.com/asynccnu/ele_service_v2/log"
-	"github.com/asynccnu/ele_service_v2/util"
-
 	"github.com/asynccnu/ele_service_v2/pkg/errno"
+	"github.com/asynccnu/ele_service_v2/util"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"

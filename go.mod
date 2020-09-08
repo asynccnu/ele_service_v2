@@ -7,6 +7,7 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.6.3
 	github.com/go-ole/go-ole v1.2.4 // indirect
+	github.com/mattn/go-colorable v0.0.9
 	github.com/satori/go.uuid v1.2.0
 	github.com/shirou/gopsutil v2.20.5+incompatible
 	github.com/spf13/pflag v1.0.5

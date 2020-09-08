@@ -6,18 +6,6 @@ import (
 	"net/http"
 )
 
-type RequestData struct {
-	Query       map[string]string `json:"query"`
-	BodyData    map[string]string `json:"body_data"`
-	Header      map[string]string `json:"header"`
-	ContentType string            `json:"content_type"`
-}
-
-// SendHTTPRequest send generic HTTP request, with url, method and request data.
-func SendHTTPRequest(requestURL, method string, data *RequestData) ([]byte, error) {
-	return nil, nil
-}
-
 // SendHTTPGetRequest send HTTP GET request.
 func SendHTTPGetRequest(requestURL string) ([]byte, error) {
 	resp, err := http.Get(requestURL)
@@ -35,5 +23,5 @@ func SendHTTPGetRequest(requestURL string) ([]byte, error) {
 
 // UnmarshalXMLBody unmarshal body data with XML.
 func UnmarshalXMLBody(body []byte, data interface{}) error {
-	return xml.Unmarshal(body, &data)
+	return xml.Unmarshal(body, data)
 }

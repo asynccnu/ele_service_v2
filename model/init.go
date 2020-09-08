@@ -26,6 +26,7 @@ func InitSelfDB() *mongo.Client {
 	if err != nil {
 		// log.Errorf(err, "Database connection failed.")
 		log.Error("Database connection failed.")
+		return client
 	}
 
 	// Check the connection
@@ -33,6 +34,7 @@ func InitSelfDB() *mongo.Client {
 	if err != nil {
 		// log.Errorf(err, "Database connection failed.")
 		log.Error("Database connection failed.")
+		return client
 	}
 
 	log.Info("Connected to MongoDB!")
@@ -48,8 +50,16 @@ func (db *Database) Init() {
 	DB = &Database{
 		Self: GetSelfDB(),
 	}
+
+	if DB.Self != nil {
+		InitCollections()
+	}
 }
 
 func (db *Database) Close() {
 	DB.Self.Disconnect(context.TODO())
+}
+
+func InitCollections() {
+	MeterCollection = DB.Self.Database(MongoDB).Collection(MeterCol)
 }

@@ -2,42 +2,61 @@ package ele
 
 import (
 	"github.com/asynccnu/ele_service_v2/handler"
+	"github.com/asynccnu/ele_service_v2/model"
 	"github.com/asynccnu/ele_service_v2/pkg/errno"
 	"github.com/asynccnu/ele_service_v2/service"
 
 	"github.com/gin-gonic/gin"
 )
 
+type GetElectricityResponse struct {
+	Building string `json:"building"`
+	Room     string `json:"room"`
+
+	HasLight bool                   `json:"has_light"`
+	Light    *model.ElectricityInfo `json:"light"`
+	HasAir   bool                   `json:"has_air"`
+	Air      *model.ElectricityInfo `json:"air"`
+
+	// 一些宿舍楼可能一间宿舍会有其它的数据，
+	// 比如东7的宿舍还有客厅，要负责客厅的空调电费
+	HasMore  bool                     `json:"has_more"`
+	MoreData []*model.ElectricityInfo `json:"more_data"`
+}
+
 // 获取电表信息
 func Get(c *gin.Context) {
-	// area := c.Query("area")
-	// architecture := c.Query("architecture")
-	// floor := c.Query("floor")
-	// dormitory := c.Query("dormitory")
-	// if area == "" || architecture == "" || floor == "" || dormitory == "" {
-	// 	handler.SendBadRequest(c, errno.ErrQuery, nil, "area, architecture, floor and dormitory are all required.")
-	// 	return
-	// }
-
-	meterType := c.DefaultQuery("type", "light")
-
-	payload := &service.MeterRequestPayload{
-		// Area:      area,
-		// Building:  architecture,
-		// Floor:     floor,
-		// Dormitory: dormitory,
-	}
-
-	if err := c.BindQuery(payload); err != nil {
-		handler.SendBadRequest(c, errno.ErrQuery, nil, "query")
+	building := c.DefaultQuery("building", "")
+	room := c.DefaultQuery("room", "")
+	if building == "" || room == "" {
+		handler.SendBadRequest(c, errno.ErrQuery, nil, "building and room are required.")
 		return
 	}
 
-	data, err := service.GetElectricity(meterType, payload)
+	records, err := service.GetElectricity(building, room)
 	if err != nil {
-		handler.SendError(c, errno.ErrDatabase, nil, "")
+		handler.SendError(c, errno.ErrGetEle, nil, err.Error())
 		return
 	}
 
-	handler.SendResponse(c, nil, data)
+	var responseData = &GetElectricityResponse{
+		Building: building,
+		Room:     room,
+	}
+
+	for _, record := range records {
+		switch record.Kind {
+		case "air":
+			responseData.HasAir = true
+			responseData.Air = record
+		case "light":
+			responseData.HasLight = true
+			responseData.Light = record
+		default:
+			responseData.HasMore = true
+			responseData.MoreData = append(responseData.MoreData, record)
+		}
+	}
+
+	handler.SendResponse(c, nil, responseData)
 }
