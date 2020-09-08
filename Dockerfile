@@ -1,4 +1,4 @@
-FROM golang:1.13.13
+FROM golang:1.14.1
 ENV GO111MODULE "on"
 ENV GOPROXY "https://goproxy.cn"
 WORKDIR $GOPATH/src/github.com/asynccnu/ele_service_v2
