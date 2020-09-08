@@ -16,3 +16,4 @@ log:
 db:  # DB 配置 部署时环境变量覆盖
   name: db_apiserver
   url: mongodb://127.0.0.1:27017/?compressors=disabled&gssapiServiceName=mongodb
+  database: electricity

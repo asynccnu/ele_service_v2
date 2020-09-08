@@ -22,9 +22,11 @@ type MeterInfo struct {
 func GetMetersByBuildingAndRoom(building, room string) ([]*MeterInfo, error) {
 	var result MeterModel
 
-	cur := MeterCollection.FindOne(context.TODO(), bson.M{"building": building, "room": room})
+	err := DB.Self.Database(DBName).Collection(MeterCol).
+		FindOne(context.TODO(), bson.M{"building": building, "room": room}).
+		Decode(&result)
 
-	if err := cur.Decode(&result); err != nil {
+	if err != nil {
 		return nil, err
 	}
 
@@ -35,7 +37,9 @@ func GetMetersByBuildingAndRoom(building, room string) ([]*MeterInfo, error) {
 func GetRoomsByBuildingName(building string) ([]string, error) {
 	var result []string
 
-	cursor, err := MeterCollection.Find(context.TODO(), bson.M{"building": building})
+	cursor, err := DB.Self.Database(DBName).Collection(MeterCol).
+		Find(context.TODO(), bson.M{"building": building})
+
 	if err != nil {
 		return nil, err
 	}

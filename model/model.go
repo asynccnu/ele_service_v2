@@ -1,15 +1,10 @@
 package model
 
-import "go.mongodb.org/mongo-driver/mongo"
+var DBName = "electricity"
 
 const (
-	MongoDB  = "electricity"
 	MeterCol = "meter"
 	// ElecCol  = "ele"
-)
-
-var (
-	MeterCollection *mongo.Collection
 )
 
 // 电费信息

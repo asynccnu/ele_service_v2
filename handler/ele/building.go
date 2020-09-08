@@ -8,8 +8,8 @@ import (
 )
 
 type BuildingItem struct {
-	Name  string // 楼栋名，用于用户展示
-	Alias string // 别名简称，用于请求
+	Name  string `json:"name"`  // 楼栋名，用于用户展示
+	Alias string `json:"alias"` // 别名简称，用于请求
 }
 
 // 西区

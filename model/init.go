@@ -51,15 +51,9 @@ func (db *Database) Init() {
 		Self: GetSelfDB(),
 	}
 
-	if DB.Self != nil {
-		InitCollections()
-	}
+	DBName = viper.GetString("db.database")
 }
 
 func (db *Database) Close() {
 	DB.Self.Disconnect(context.TODO())
-}
-
-func InitCollections() {
-	MeterCollection = DB.Self.Database(MongoDB).Collection(MeterCol)
 }

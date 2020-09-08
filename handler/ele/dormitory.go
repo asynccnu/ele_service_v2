@@ -1,7 +1,6 @@
 package ele
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 
@@ -35,7 +34,6 @@ func GetDormitories(c *gin.Context) {
 	if building == "东7" {
 		for i := len(list) - 1; i >= 0; i-- {
 			if !strings.HasSuffix(list[i], "A") && !strings.HasSuffix(list[i], "B") {
-				fmt.Println("1")
 				list = append(list[:i], list[i+1:]...)
 			}
 		}
