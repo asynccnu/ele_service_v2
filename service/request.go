@@ -11,7 +11,7 @@ type RemainPowerPayload struct {
 
 // 请求获取剩余电量（度）
 func MakeRemainPowerRequest(meterId string) (*RemainPowerPayload, error) {
-	url := "http://jnb.ccnu.edu.cn/icbs/PurchaseWebService.asmx/getReserveHKAM?AmMeter_ID=" + meterId
+	url := "https://jnb.ccnu.edu.cn/icbs/PurchaseWebService.asmx/getReserveHKAM?AmMeter_ID=" + meterId
 
 	var payload RemainPowerPayload
 	if err := MakeRequest(url, &payload); err != nil {
@@ -34,7 +34,7 @@ type DayElectricItem struct {
 
 // 获取用电详情，开始时间-结束时间
 func MakeChargeInfoRequest(meterId string, startDate, endDate string) ([]*DayElectricItem, error) {
-	url := "http://jnb.ccnu.edu.cn/icbs/PurchaseWebService.asmx/getMeterDayValue?AmMeter_ID=" + meterId +
+	url := "https://jnb.ccnu.edu.cn/icbs/PurchaseWebService.asmx/getMeterDayValue?AmMeter_ID=" + meterId +
 		"&startDate=" + startDate + "&endDate=" + endDate
 
 	var payload DayValueInfo
