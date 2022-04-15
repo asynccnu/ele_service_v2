@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -11,11 +12,7 @@ import (
 
 // 获取剩余电量
 func GetRemainPower(meterId string) (*RemainPowerPayload, error) {
-	remainPower, err := MakeRemainPowerRequest(meterId)
-	if err != nil {
-		return nil, err
-	}
-	return remainPower, nil
+	return MakeRemainPowerRequest(meterId)
 }
 
 // 昨日用电量
@@ -68,7 +65,8 @@ func GetElectricity(building, room string) ([]*model.ElectricityInfo, error) {
 		log.Error("GetMetersByBuildingAndRoom function error: " + err.Error())
 		return nil, err
 	}
-
+	fmt.Println(meters[0])
+	fmt.Println(meters[1])
 	for _, meter := range meters {
 		// 获取电费
 		record, err := GetElectricChargeByMeterID(meter.MeterID)

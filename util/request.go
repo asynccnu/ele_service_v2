@@ -1,6 +1,7 @@
 package util
 
 import (
+	"crypto/tls"
 	"encoding/xml"
 	"io/ioutil"
 	"net/http"
@@ -8,7 +9,13 @@ import (
 
 // SendHTTPGetRequest send HTTP GET request.
 func SendHTTPGetRequest(requestURL string) ([]byte, error) {
-	resp, err := http.Get(requestURL)
+	// resp, err := http.Get(requestURL)
+	tr := &http.Transport{ // solve x509: certificate(https)
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+
+	resp, err := client.Get(requestURL)
 	if err != nil {
 		return nil, err
 	}
