@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 // SendHTTPGetRequest send HTTP GET request.
@@ -13,7 +14,10 @@ func SendHTTPGetRequest(requestURL string) ([]byte, error) {
 	tr := &http.Transport{ // solve x509: certificate(https)
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
-	client := &http.Client{Transport: tr}
+	client := &http.Client{
+		Transport: tr,
+		Timeout:   time.Second * 20,
+	}
 
 	resp, err := client.Get(requestURL)
 	if err != nil {

@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -65,8 +64,7 @@ func GetElectricity(building, room string) ([]*model.ElectricityInfo, error) {
 		log.Error("GetMetersByBuildingAndRoom function error: " + err.Error())
 		return nil, err
 	}
-	fmt.Println(meters[0])
-	fmt.Println(meters[1])
+
 	for _, meter := range meters {
 		// 获取电费
 		record, err := GetElectricChargeByMeterID(meter.MeterID)
