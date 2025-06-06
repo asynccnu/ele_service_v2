@@ -1,6 +1,6 @@
 package model
 
-var DBName = "electricity"
+var DBName = "ccnubox"
 
 const (
 	MeterCol = "meter"
